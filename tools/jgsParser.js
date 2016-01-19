@@ -1,10 +1,10 @@
 var fs = require('fs');
 
 var main = function(fileName) {
-  var jqsBuffer = new Buffer(fs.readFileSync(fileName, 'binary'), 'binary');
+  var jgsBuffer = new Buffer(fs.readFileSync(fileName, 'binary'), 'binary');
   
   // 51 51 47 61 6d 65 20 4a 51 53  = "QQGame JQS"
-  if ( jqsBuffer.toString('ascii', 0, 10) !== "QQGame JQS" ) {
+  if ( jgsBuffer.toString('ascii', 0, 10) !== "QQGame JQS" ) {
     console.log("This is not QQGame JQS file!");
     return;
   }
@@ -39,11 +39,25 @@ var main = function(fileName) {
   // 0C:  排长 
   // 0D:  工兵
 
-  var jqsInfo = {};
+  var jgsInfo = {};
+  
+  // 标识己方位置 00黄 01蓝 02绿 03紫
+  var who = jgsBuffer[15] ;
+  if ( who == 0) {
+    jgsInfo.myself = "E";
+  } else if ( who == 1) {
+    jgsInfo.myself = "N";
+  } else if ( who == 2) {
+    jgsInfo.myself  = "W";
+  } else if ( who == 3) {
+    jgsInfo.myself  = "S";
+  } else {
+    console.log("[ERROR], parse error!");
+    return;
+  }
 
   // totalMove
-  jqsInfo.myself = jqsBuffer[15];  // 标识己方位置 00黄 01蓝 02绿 03紫
-  jqsInfo.totalMove = jqsBuffer[27] * 256 + jqsBuffer[26];
+  jgsInfo.totalMove = jgsBuffer[27] * 256 + jgsBuffer[26];
 
   // user info
   // 20 - 2F： 第一个字节（20）表玩家颜色 00黄 01蓝 02绿 03紫，之后填充7个0
@@ -56,22 +70,48 @@ var main = function(fileName) {
   // 74 ~ 77： 最后4字节作用未知
   //
 
-  jqsInfo.east = [];
-  for(var i = 60; i < 30+60; i++) {
-    jqsInfo.east.push( jqsBuffer[i] );
+
+  jgsInfo.board = []
+  for(var i = 0; i <= 16; i++) {
+    var line = new Array(17)
+    for(var j = 0; j <= 16; j++){
+      line[j] = 0;
+    }
+    jgsInfo.board.push(line)
   }
-  jqsInfo.north = [];
-  for(var i = 148; i < 30+148; i++) {
-    jqsInfo.north.push( jqsBuffer[i] );
+
+  var n = 60;
+  for(var i = 0; i < 6; i++) {
+    for(var j = 0; j < 5; j++) {
+      jgsInfo.board[6+j][11+i] = jgsBuffer[n];
+      n++;
+    }
   }
-  jqsInfo.west = [];
-  for(var i = 236; i < 30+236; i++) {
-    jqsInfo.west.push( jqsBuffer[i] );
+ 
+  n = 148;
+  for(var i = 0; i < 6; i++) {
+    for(var j = 0; j < 5; j++) {
+      jgsInfo.board[5-i][6+j] = jgsBuffer[n];
+      n++;
+    }
   }
-  jqsInfo.south = [];
-  for(var i = 324; i < 30+324; i++) {
-    jqsInfo.south.push( jqsBuffer[i] );
+
+  var n = 236;
+  for(var i = 0; i < 6; i++) {
+    for(var j = 0; j < 5; j++) {
+      jgsInfo.board[10-j][5-i] = jgsBuffer[n];
+      n++;
+    }
   }
+ 
+  n = 324;
+  for(var i = 0; i < 6; i++) {
+    for(var j = 0; j < 5; j++) {
+      jgsInfo.board[11+i][10-j] = jgsBuffer[n];
+      n++;
+    }
+  }
+
 
   // 棋步或事件信息解析
   //
@@ -114,54 +154,63 @@ var main = function(fileName) {
   //
   //
 
-  jqsInfo.record = [];
-  for (var i = 0; i < jqsInfo.totalMove; i++) {
+  jgsInfo.record = [];
+  for (var i = 0; i < jgsInfo.totalMove; i++) {
     var seq = 412 + i*10;
     var move = {};
 
-    if ( jqsBuffer[seq] === 95 ) {
-      move.xfrom = 16 - jqsBuffer[seq+3];
-      move.yfrom = 16 - jqsBuffer[seq+2];
-      move.xto = 16 - jqsBuffer[seq+5];
-      move.yto = 16 - jqsBuffer[seq+4];
+    if ( jgsBuffer[seq] === 95 ) {
+      move.yfrom = 16 - jgsBuffer[seq+3];
+      move.xfrom = jgsBuffer[seq+2];
+      move.yto = 16 - jgsBuffer[seq+5];
+      move.xto = jgsBuffer[seq+4];
 
-      switch ( jqsBuffer[seq+1] ) {
-        case 0:
-        case 8:
-        case 16:
-        case 24:
-          move.action = 'moved';
-          break;
-        case 1:
-        case 9:
-        case 17:
-        case 25:
-          move.action = 'kill';
-          break;
-        case 2:
-        case 10:
-        case 18:
-        case 26:
-          move.action = 'killed';
-          break;
-        case 3:
-        case 11:
-        case 19:
-        case 27:
-        case 67:
-        case 75:
-        case 83:
-        case 91:
-          move.action = 'fired';
-          break;
-
-       default:
-          throw Error('Parse Error');
-          break;
+      var who = jgsBuffer[seq+1] & 0x18;
+      if ( who == 24 ) {
+          move.who = 'E';
+      } else if ( who == 16) {
+          move.who = 'N';
+      } else if ( who == 8) {
+          move.who = 'W';
+      } else {
+          move.who = 'S';
       }
 
-    } else if ( jqsBuffer[seq] === 245 ){
-      switch( jqsBuffer[seq+1] ) {
+      var action = jgsBuffer[seq+1] & 0x03;
+      if ( action ==  0) {
+        move.action = "move";
+      } else if ( action == 1) {
+        move.action = "kill";
+      } else if ( action == 2) {
+        move.action = "killed";
+      } else {
+        move.action = "fired";
+      }
+      
+      /*
+      if( jgsBuffer[seq+1] & 0xC0) {
+        console.log(">>>>>>>>>>>");
+        console.log(jgsBuffer[seq + 1], jgsBuffer[seq + 6], jgsBuffer[seq + 7], jgsBuffer[seq + 8], jgsBuffer[seq + 9] );
+        console.log(move);
+      }
+      */
+
+    } else if ( jgsBuffer[seq] === 245 ){
+  
+      var who = jgsBuffer[seq+2] ;
+      if ( who == 0) {
+        move.who = "E";
+      } else if ( who == 1) {
+        move.who = "N";
+      } else if ( who == 2) {
+        move.who = "W";
+      } else if ( who == 3) {
+        move.who = "S";
+      } else {
+        console.log("[ERROR], parse error!");
+      }
+      
+      switch( jgsBuffer[seq+1] ) {
         case 5:{
           move.action = 'end';
           break;
@@ -185,13 +234,13 @@ var main = function(fileName) {
     } else {
       throw Error('Parse Error');
     }
-    jqsInfo.record.push( move );
+    jgsInfo.record.push( move );
   }
 
   if ( process.argv.length === 4) {
-    fs.writeFileSync(process.argv[3], JSON.stringify(jqsInfo));
+    fs.writeFileSync(process.argv[3], JSON.stringify(jgsInfo));
   } else {
-    console.log ( jqsInfo );
+    console.log(jgsInfo);
   }
 
 };
