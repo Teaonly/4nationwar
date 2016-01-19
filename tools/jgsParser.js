@@ -186,14 +186,12 @@ var main = function(fileName) {
       } else {
         move.action = "fired";
       }
-      
-      /*
+
       if( jgsBuffer[seq+1] & 0xC0) {
-        console.log(">>>>>>>>>>>");
-        console.log(jgsBuffer[seq + 1], jgsBuffer[seq + 6], jgsBuffer[seq + 7], jgsBuffer[seq + 8], jgsBuffer[seq + 9] );
-        console.log(move);
+        move.flag = true;
+      } else {
+        move.flag = false;
       }
-      */
 
     } else if ( jgsBuffer[seq] === 245 ){
   
@@ -242,7 +240,6 @@ var main = function(fileName) {
   } else {
     console.log(jgsInfo);
   }
-
 };
 
 if ( process.argv.length < 3) {
