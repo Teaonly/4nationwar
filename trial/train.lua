@@ -10,11 +10,11 @@ local LSTM = require 'LSTM'
 
 local INPUT_SIZE = 4
 local OUTPUT_SIZE = 24
-local RNN_SIZE = 160
+local RNN_SIZE = 256
 local LAYER_NUMBER = 2
 local BATCH_SIZE = 16
-local MAX_TIMING_STEP = 48
-local GRAD_CLIP = 3.5
+local MAX_TIMING_STEP = 16
+local GRAD_CLIP = 5.0
 
 toyRNN = {};
 toyRNN.model = LSTM.lstm(INPUT_SIZE, OUTPUT_SIZE, RNN_SIZE, LAYER_NUMBER)
@@ -47,10 +47,10 @@ local feval = function(x)
   local x, y = toy_data.get_batch(BATCH_SIZE, step_number)
 
   ------------------- forward pass -------------------
-  local rnn_state = {};
   local predictions = {}           -- softmax outputs
   local loss = 0
 
+  local rnn_state = {};
   rnn_state[0] = {unpack(cell_data)}
   for t=1, step_number do
     toyRNN.clone_models[t]:training()
@@ -69,7 +69,7 @@ local feval = function(x)
   for i = 1, LAYER_NUMBER*2 do
     drnn_state[step_number][i] = torch.zeros(BATCH_SIZE,  RNN_SIZE)
   end
-  
+
   for t=step_number, 1, -1 do
     -- backprop through loss, and softmax/linear
     local doutput_t = toyRNN.clone_criterions[t]:backward(predictions[t], y[t])
@@ -89,9 +89,41 @@ local feval = function(x)
   return loss, grad_params
 end
 
-local doTest = function
+local doTest = function() 
+  toyRNN.model:evaluate();
+
+  local step_number = 20
+  local xx, yy = toy_data.singleSequence(step_number)
+  local x = torch.Tensor(1, 4)
+
+  local rnn_state = {}
+  for i = 1, LAYER_NUMBER*2 do
+    rnn_state[i] = torch.Tensor(1, RNN_SIZE)
+  end
+
+  local score = 0
+  for t=1, step_number do
+    -- one hot input
+    x[1]:zero()
+    x[1][xx[t]+1] = 1
+
+    local lst = toyRNN.model:forward({x, unpack(rnn_state)})
+    for i = 1, #rnn_state do
+      rnn_state[i] = lst[i]
+    end
+
+    local _, prediction = lst[#lst]:max(2)
+
+    if ( prediction[1][1] == yy[t] ) then
+      score = score + 1
+    end
+
+  end
+
+  print(">>>>>>>SCORES = " .. score/step_number);
 
 end
+
 
 local doTrain = function(num) 
   train_loss = {}
@@ -101,14 +133,15 @@ local doTrain = function(num)
     local _, loss = optim.rmsprop(feval, params, optim_state)
     print('>>>Iterating ' .. i .. ' with loss = ' .. loss[1])
 
-    if ( i % 200 == 0) then
+    if ( i % 300 == 0) then
        optim_state.learningRate = optim_state.learningRate * 0.98
     end
-    if ( i % 300 == 0) then
+
+    if ( i % 100 == 0) then
       doTest();
     end
+
   end
 end
 
-doTrain(5000);
-
+doTrain(5000)

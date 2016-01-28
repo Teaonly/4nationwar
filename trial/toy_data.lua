@@ -1,4 +1,6 @@
-local singleSequence = function (step_number) 
+
+toy_data = {}
+toy_data.singleSequence = function (step_number) 
   local box = {};
   for i = 1, 5 do
     box[i] = {};
@@ -47,7 +49,6 @@ local singleSequence = function (step_number)
   return xx, yy;
 end
 
-toy_data = {}
 toy_data.get_batch = function(batch, step_number)
   local x = {}
   local y = {}
@@ -58,7 +59,7 @@ toy_data.get_batch = function(batch, step_number)
   end
 
   for i = 1, batch do
-    xx, yy = singleSequence(step_number)
+    local xx, yy = toy_data.singleSequence(step_number)
     for j = 1, step_number do
       x[j][i][ xx[j] + 1] = 1
       y[j][i] = yy[j]
