@@ -10,10 +10,10 @@ local LSTM = require 'LSTM'
 
 local INPUT_SIZE = 4
 local OUTPUT_SIZE = 24
-local RNN_SIZE = 128
+local RNN_SIZE = 128 
 local LAYER_NUMBER = 3
-local BATCH_SIZE = 16
-local MAX_TIMING_STEP = 16
+local BATCH_SIZE = 32
+local MAX_TIMING_STEP = 64
 local GRAD_CLIP = 5.0
 
 toyRNN = {};
@@ -92,13 +92,13 @@ end
 local doTest = function() 
   toyRNN.model:evaluate();
 
-  local step_number = 20
+  local step_number = 100
   local xx, yy = toy_data.singleSequence(step_number)
   local x = torch.Tensor(1, 4)
 
   local rnn_state = {}
   for i = 1, LAYER_NUMBER*2 do
-    rnn_state[i] = torch.Tensor(1, RNN_SIZE)
+    rnn_state[i] = torch.zeros(1, RNN_SIZE)
   end
 
   local score = 0
@@ -145,3 +145,5 @@ local doTrain = function(num)
 end
 
 doTrain(5000)
+
+torch.save("./mode.bin", toyRNN.model);
