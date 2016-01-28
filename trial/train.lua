@@ -10,14 +10,14 @@ local LSTM = require 'LSTM'
 
 local INPUT_SIZE = 4
 local OUTPUT_SIZE = 24
-local CELL_SIZE = 128
-local LAYER_NUMBER = 1
-local BATCH_SIZE = 1
-local MAX_TIMING_STEP = 64
-local GRAD_CLIP = 5
+local RNN_SIZE = 160
+local LAYER_NUMBER = 2
+local BATCH_SIZE = 16
+local MAX_TIMING_STEP = 48
+local GRAD_CLIP = 3.5
 
 toyRNN = {};
-toyRNN.model = LSTM.lstm(INPUT_SIZE, OUTPUT_SIZE, CELL_SIZE, LAYER_NUMBER)
+toyRNN.model = LSTM.lstm(INPUT_SIZE, OUTPUT_SIZE, RNN_SIZE, LAYER_NUMBER)
 toyRNN.criterion = nn.ClassNLLCriterion()
 
 -- global var for training
@@ -30,8 +30,10 @@ toyRNN.clone_models = model_utils.clone_many_times(toyRNN.model, MAX_TIMING_STEP
 toyRNN.clone_criterions = model_utils.clone_many_times(toyRNN.criterion, MAX_TIMING_STEP)
 
 -- init internal state
-cell_data = torch.zeros(BATCH_SIZE,  CELL_SIZE)
-hidden_data = torch.zeros(BATCH_SIZE, CELL_SIZE)
+cell_data = {}
+for i = 1, LAYER_NUMBER*2 do
+  cell_data[i] = torch.zeros(BATCH_SIZE,  RNN_SIZE)
+end
 
 -- training function
 local feval = function(x) 
@@ -43,19 +45,19 @@ local feval = function(x)
   ------------------ get minibatch -------------------
   local step_number = MAX_TIMING_STEP
   local x, y = toy_data.get_batch(BATCH_SIZE, step_number)
-  
+
   ------------------- forward pass -------------------
   local rnn_state = {};
   local predictions = {}           -- softmax outputs
   local loss = 0
 
-  rnn_state[0] = {cell_data, hidden_data}
+  rnn_state[0] = {unpack(cell_data)}
   for t=1, step_number do
     toyRNN.clone_models[t]:training()
 
     local lst = toyRNN.clone_models[t]:forward{x[t], unpack(rnn_state[t-1])}
     rnn_state[t] = {}
-    for i=1,#init_state do table.insert(rnn_state[t], lst[i]) end -- extract the state, without output
+    for i=1, #lst - 1 do table.insert(rnn_state[t], lst[i]) end -- extract the state, without output
     predictions[t] = lst[#lst] -- last element is the prediction
     loss = loss + toyRNN.clone_criterions[t]:forward(predictions[t], y[t])
   end
@@ -64,8 +66,9 @@ local feval = function(x)
   ------------------ backward pass -------------------
   local drnn_state = {[step_number] = {}};
   -- there is no loss on state at last step 
-  drnn_state[step_number][1] = torch.zeros(BATCH_SIZE,  CELL_SIZE)
-  drnn_state[step_number][2] = torch.zeros(BATCH_SIZE,  CELL_SIZE)
+  for i = 1, LAYER_NUMBER*2 do
+    drnn_state[step_number][i] = torch.zeros(BATCH_SIZE,  RNN_SIZE)
+  end
   
   for t=step_number, 1, -1 do
     -- backprop through loss, and softmax/linear
@@ -82,19 +85,30 @@ local feval = function(x)
     end
   end
 
-  grad_params:clamp(-opt.grad_clip, opt.grad_clip)
+  grad_params:clamp(-GRAD_CLIP, GRAD_CLIP)
   return loss, grad_params
+end
+
+local doTest = function
+
 end
 
 local doTrain = function(num) 
   train_loss = {}
   local optim_state = {learningRate = 0.02, alpha = 0.95}
-  
+
   for i = 1, num do
     local _, loss = optim.rmsprop(feval, params, optim_state)
     print('>>>Iterating ' .. i .. ' with loss = ' .. loss[1])
+
+    if ( i % 200 == 0) then
+       optim_state.learningRate = optim_state.learningRate * 0.98
+    end
+    if ( i % 300 == 0) then
+      doTest();
+    end
   end
 end
 
-doTrain(10);
+doTrain(5000);
 

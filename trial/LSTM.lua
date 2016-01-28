@@ -62,7 +62,8 @@ function LSTM.lstm(input_size, output_size, rnn_size, layers, dropout)
   local top_h = outputs[#outputs]
   if dropout > 0 then top_h = nn.Dropout(dropout)(top_h) end
   local proj = nn.Linear(rnn_size, output_size)(top_h)
-  table.insert(outputs, proj)
+  local logsoft = nn.LogSoftMax()(proj)
+  table.insert(outputs, logsoft)
 
   return nn.gModule(inputs, outputs), forget_gates
 end
