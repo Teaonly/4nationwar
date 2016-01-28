@@ -10,8 +10,8 @@ local LSTM = require 'LSTM'
 
 local INPUT_SIZE = 4
 local OUTPUT_SIZE = 24
-local RNN_SIZE = 256
-local LAYER_NUMBER = 2
+local RNN_SIZE = 128
+local LAYER_NUMBER = 3
 local BATCH_SIZE = 16
 local MAX_TIMING_STEP = 16
 local GRAD_CLIP = 5.0
