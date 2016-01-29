@@ -1,16 +1,17 @@
+local BOX_SIZE = 3
 
-toy_data = {}
+local toy_data = {}
 toy_data.singleSequence = function (step_number) 
   local box = {};
-  for i = 1, 5 do
+  for i = 1, BOX_SIZE do
     box[i] = {};
-    for j = 1, 5 do
-      box[i][j] = (i-1)*5 + j
+    for j = 1, BOX_SIZE do
+      box[i][j] = (i-1)*BOX_SIZE + j
     end
   end
-  local x = 5
-  local y = 5
-  box[5][5] = 0;
+  local x = BOX_SIZE
+  local y = BOX_SIZE
+  box[BOX_SIZE][BOX_SIZE] = 0;
   
   local xx = {}
   local yy = {}
@@ -34,7 +35,7 @@ toy_data.singleSequence = function (step_number)
       ny = ny - 1
     end
 
-    if ( nx >= 1 and nx <=5 and ny >=1 and ny <= 5) then
+    if ( nx >= 1 and nx <=BOX_SIZE and ny >=1 and ny <= BOX_SIZE) then
       table.insert(xx, move)
       table.insert(yy, box[ny][nx])
       box[y][x] = box[ny][nx]
