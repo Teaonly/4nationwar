@@ -10,10 +10,10 @@ local LSTM = require 'LSTM'
 
 local INPUT_SIZE = 4
 local OUTPUT_SIZE = 24
-local RNN_SIZE = 128 
+local RNN_SIZE = 256
 local LAYER_NUMBER = 3
-local BATCH_SIZE = 32
-local MAX_TIMING_STEP = 64
+local BATCH_SIZE = 48
+local MAX_TIMING_STEP = 100
 local GRAD_CLIP = 5.0
 
 toyRNN = {};
@@ -32,9 +32,10 @@ toyRNN.clone_criterions = model_utils.clone_many_times(toyRNN.criterion, MAX_TIM
 -- init internal state
 cell_data = {}
 for i = 1, LAYER_NUMBER*2 do
-  cell_data[i] = torch.zeros(BATCH_SIZE,  RNN_SIZE)
+  cell_data[i] = torch.ones(BATCH_SIZE,  RNN_SIZE) * 0.05 
 end
 
+local target_step = 10
 -- training function
 local feval = function(x) 
   if ( x ~= params ) then
@@ -43,7 +44,7 @@ local feval = function(x)
   grad_params:zero()
 
   ------------------ get minibatch -------------------
-  local step_number = MAX_TIMING_STEP
+  local step_number = target_step
   local x, y = toy_data.get_batch(BATCH_SIZE, step_number)
 
   ------------------- forward pass -------------------
@@ -92,13 +93,13 @@ end
 local doTest = function() 
   toyRNN.model:evaluate();
 
-  local step_number = 100
+  local step_number = MAX_TIMING_STEP
   local xx, yy = toy_data.singleSequence(step_number)
   local x = torch.Tensor(1, 4)
 
   local rnn_state = {}
   for i = 1, LAYER_NUMBER*2 do
-    rnn_state[i] = torch.zeros(1, RNN_SIZE)
+    rnn_state[i] = torch.ones(1, RNN_SIZE) * 0.05
   end
 
   local score = 0
@@ -119,8 +120,8 @@ local doTest = function()
     end
 
   end
-
-  print(">>>>>>>SCORES = " .. score/step_number);
+  
+  return score
 
 end
 
@@ -129,21 +130,35 @@ local doTrain = function(num)
   train_loss = {}
   local optim_state = {learningRate = 0.02, alpha = 0.95}
 
+
+  local maxScore = 0
+
   for i = 1, num do
     local _, loss = optim.rmsprop(feval, params, optim_state)
     print('>>>Iterating ' .. i .. ' with loss = ' .. loss[1])
 
     if ( i % 300 == 0) then
-       optim_state.learningRate = optim_state.learningRate * 0.98
+       optim_state.learningRate = optim_state.learningRate * 0.99
+       target_step = target_step + 1
+       if ( target_step > MAX_TIMING_STEP/2 ) then
+        target_step = MAX_TIMING_STEP/2
+       end
     end
 
     if ( i % 100 == 0) then
-      doTest();
-    end
+      local totalScore = 0
+      for  j = 1, 10 do
+        totalScore = totalScore + doTest()
+      end
 
+      if ( totalScore > maxScore ) then
+        torch.save("./mode.bin", toyRNN.model);
+        maxScore = totalScore
+      end
+
+      print(">>>>>>>>>>>>>>" .. totalScore / 1000);
+    end
   end
 end
 
-doTrain(5000)
-
-torch.save("./mode.bin", toyRNN.model);
+doTrain(20000)
