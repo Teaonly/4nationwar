@@ -10,10 +10,10 @@ local LSTM = require 'LSTM'
 
 local INPUT_SIZE = 4
 local OUTPUT_SIZE = 24
-local RNN_SIZE = 256
+local RNN_SIZE = 128
 local LAYER_NUMBER = 3
 local BATCH_SIZE = 48
-local MAX_TIMING_STEP = 100
+local MAX_TIMING_STEP = 64
 local GRAD_CLIP = 5.0
 
 toyRNN = {};
@@ -26,6 +26,18 @@ params, grad_params = model_utils.combine_all_parameters(toyRNN.model)
 -- init weights with simple uniform random 
 params:uniform(-0.08, 0.08)
 
+-- initialize the LSTM forget gates with slightly higher biases to encourage remembering in the beginning
+for layer_idx = 1, LAYER_NUMBER do
+  for _,node in ipairs(toyRNN.model.forwardnodes) do
+    if node.data.annotations.name == "i2h_" .. layer_idx then
+      print('setting forget gate biases to 1 in LSTM layer ' .. layer_idx)
+      -- the gates are, in order, i,f,o,g, so f is the 2nd block of weights
+      node.data.module.bias[{{RNN_SIZE+1, 2*RNN_SIZE}}]:fill(1.0)
+    end
+  end
+end
+
+
 toyRNN.clone_models = model_utils.clone_many_times(toyRNN.model, MAX_TIMING_STEP)
 toyRNN.clone_criterions = model_utils.clone_many_times(toyRNN.criterion, MAX_TIMING_STEP)
 
@@ -35,7 +47,6 @@ for i = 1, LAYER_NUMBER*2 do
   cell_data[i] = torch.ones(BATCH_SIZE,  RNN_SIZE) * 0.05 
 end
 
-local target_step = 10
 -- training function
 local feval = function(x) 
   if ( x ~= params ) then
@@ -44,7 +55,7 @@ local feval = function(x)
   grad_params:zero()
 
   ------------------ get minibatch -------------------
-  local step_number = target_step
+  local step_number = MAX_TIMING_STEP
   local x, y = toy_data.get_batch(BATCH_SIZE, step_number)
 
   ------------------- forward pass -------------------
@@ -93,7 +104,7 @@ end
 local doTest = function() 
   toyRNN.model:evaluate();
 
-  local step_number = MAX_TIMING_STEP
+  local step_number = 100
   local xx, yy = toy_data.singleSequence(step_number)
   local x = torch.Tensor(1, 4)
 
@@ -139,10 +150,6 @@ local doTrain = function(num)
 
     if ( i % 300 == 0) then
        optim_state.learningRate = optim_state.learningRate * 0.99
-       target_step = target_step + 1
-       if ( target_step > MAX_TIMING_STEP/2 ) then
-        target_step = MAX_TIMING_STEP/2
-       end
     end
 
     if ( i % 100 == 0) then
@@ -156,7 +163,7 @@ local doTrain = function(num)
         maxScore = totalScore
       end
 
-      print(">>>>>>>>>>>>>>" .. totalScore / 1000);
+      print(">>>>>>>>>>>>>>" .. totalScore / (10*100));
     end
   end
 end
