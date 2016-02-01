@@ -9,11 +9,11 @@ local model_utils = require 'model_utils'
 local LSTM = require 'LSTM'
 
 local INPUT_SIZE = 4
-local OUTPUT_SIZE = 8
-local RNN_SIZE = 64
-local LAYER_NUMBER = 3
-local BATCH_SIZE = 32
-local MAX_TIMING_STEP = 64
+local OUTPUT_SIZE = 15
+local RNN_SIZE = 128
+local LAYER_NUMBER = 2
+local BATCH_SIZE = 16
+local MAX_TIMING_STEP = 128
 local GRAD_CLIP = 5.0
 
 toyRNN = {};
@@ -55,7 +55,7 @@ local feval = function(x)
   grad_params:zero()
 
   ------------------ get minibatch -------------------
-  local step_number = MAX_TIMING_STEP
+  local step_number = (torch.random() % (MAX_TIMING_STEP - 64)) + 64 
   local x, y = toy_data.get_batch(BATCH_SIZE, step_number)
 
   ------------------- forward pass -------------------
@@ -141,14 +141,13 @@ local doTrain = function(num)
   train_loss = {}
   local optim_state = {learningRate = 0.02, alpha = 0.95}
 
-
   local maxScore = 0
 
   for i = 1, num do
     local _, loss = optim.rmsprop(feval, params, optim_state)
     print('>>>Iterating ' .. i .. ' with loss = ' .. loss[1])
 
-    if ( i % 300 == 0) then
+    if ( i % 500 == 0) then
        optim_state.learningRate = optim_state.learningRate * 0.99
     end
 
@@ -157,15 +156,13 @@ local doTrain = function(num)
       for  j = 1, 32 do
         totalScore = totalScore + doTest()
       end
-
       if ( totalScore > maxScore ) then
         torch.save("./mode.bin", toyRNN.model);
         maxScore = totalScore
       end
-
-      print(">>>>>>>>>>>>>>" .. totalScore / (32*MAX_TIMING_STEP));
+      print(">>>>>>>>>>>>>>" .. maxScore/(32*MAX_TIMING_STEP) .. "  " .. totalScore / (32*MAX_TIMING_STEP));
     end
   end
 end
 
-doTrain(20000)
+doTrain(50000)

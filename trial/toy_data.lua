@@ -1,4 +1,4 @@
-local BOX_SIZE = 3
+local BOX_SIZE = 4
 
 local toy_data = {}
 toy_data.singleSequence = function (step_number) 
