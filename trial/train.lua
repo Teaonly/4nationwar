@@ -157,7 +157,7 @@ local doTrain = function(num)
         totalScore = totalScore + doTest()
       end
       if ( totalScore > maxScore ) then
-        torch.save("./mode.bin", toyRNN.model);
+        torch.save("./model.bin", toyRNN.model);
         maxScore = totalScore
       end
       print(">>>>>>>>>>>>>>" .. maxScore/(32*MAX_TIMING_STEP) .. "  " .. totalScore / (32*MAX_TIMING_STEP));
