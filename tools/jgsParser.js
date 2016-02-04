@@ -75,13 +75,13 @@ var main = function(fileName) {
   for(var i = 0; i <= 16; i++) {
     var line = new Array(17)
     for(var j = 0; j <= 16; j++){
-      line[j] = null;
+      line[j] = {};
     }
     jgsInfo.board.push(line)
   }
 
   var getChess = function(offset) {
-    var chess = null;
+    var chess = {};
     if ( jgsBuffer[offset] === 0) {
       return chess;
     }
