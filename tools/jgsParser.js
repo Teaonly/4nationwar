@@ -75,15 +75,35 @@ var main = function(fileName) {
   for(var i = 0; i <= 16; i++) {
     var line = new Array(17)
     for(var j = 0; j <= 16; j++){
-      line[j] = 0;
+      line[j] = null;
     }
     jgsInfo.board.push(line)
   }
 
+  var getChess = function(offset) {
+    var chess = null;
+    if ( jgsBuffer[offset] === 0) {
+      return chess;
+    }
+    chess = {};
+    chess.value = jgsBuffer[offset];
+    if ( offset >= 60 && offset < 90 ) {
+      chess.who = 'E';
+    } else if ( offset >= 148 && offset < 178) {
+      chess.who = 'S';
+    } else if ( offset >= 236 && offset < 266) {
+      chess.who = 'W';
+    } else if ( offset >= 324 && offset < 354) {
+      chess.who = 'N';
+    }
+    return chess;
+  };
   var n = 60;
+
+
   for(var i = 0; i < 6; i++) {
     for(var j = 0; j < 5; j++) {
-      jgsInfo.board[6+j][11+i] = jgsBuffer[n];
+      jgsInfo.board[6+j][11+i] = getChess(n);
       n++;
     }
   }
@@ -91,7 +111,7 @@ var main = function(fileName) {
   n = 148;
   for(var i = 0; i < 6; i++) {
     for(var j = 0; j < 5; j++) {
-      jgsInfo.board[5-i][6+j] = jgsBuffer[n];
+      jgsInfo.board[5-i][6+j] = getChess(n);
       n++;
     }
   }
@@ -99,7 +119,7 @@ var main = function(fileName) {
   var n = 236;
   for(var i = 0; i < 6; i++) {
     for(var j = 0; j < 5; j++) {
-      jgsInfo.board[10-j][5-i] = jgsBuffer[n];
+      jgsInfo.board[10-j][5-i] = getChess(n);
       n++;
     }
   }
@@ -107,7 +127,7 @@ var main = function(fileName) {
   n = 324;
   for(var i = 0; i < 6; i++) {
     for(var j = 0; j < 5; j++) {
-      jgsInfo.board[11+i][10-j] = jgsBuffer[n];
+      jgsInfo.board[11+i][10-j] = getChess(n);
       n++;
     }
   }
