@@ -18,7 +18,7 @@ for i=1,JGS_NUMBER do
   print(">>>>>>>>>>>>>>> " .. filename)
 
   os.execute('rm -f /tmp/jgs.json')
-  os.execute('node jgsParser.js ' .. filename .. ' /tmp/jgs.json')
+  os.execute('nodejs jgsParser.js ' .. filename .. ' /tmp/jgs.json')
 
   local f = io.open('/tmp/jgs.json', "rb")
 

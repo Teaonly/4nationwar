@@ -250,7 +250,8 @@ var main = function(fileName) {
         }
       }
     } else {
-      throw Error('Parse Error');
+      	console.log( process.argv[2] ); 
+	throw Error('Parse Error');
     }
     jgsInfo.record.push( move );
   }
