@@ -23,5 +23,5 @@ $(document).ready(function () {
 
   var item = $("#P_4_9")
   $('<img>').attr('src', 'images/r9.png').attr("class", "chess").appendTo(item);
-
+  
 });

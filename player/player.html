@@ -40,9 +40,22 @@
     </div>
   </div>
   <div class="col-md-4">
-    <div class="tools form-group">
-      <button class="btn btn-default" type="submit">Button</button>
-      <button class="btn btn-default" type="submit">Button</button>
+    <div class="leftSide">
+      <div class="bottomSide">
+        <h3>0/205</h3>
+        <div class="btn-toolbar" role="toolbar">
+          <div class="btn-group" role="group">
+            <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-fast-backward"></span></button>
+            <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-step-backward"></span></button>
+            <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-step-forward"></span></button>
+            <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-fast-forward"></span></button>
+          </div>
+          <div class="btn-group" role="group">
+            <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-eye-close"></span>明/暗</button>
+          </div>
+        </div>
+        <h5>我方:<span class="label label-default">黑</span>，胜方：<span class="label label-danger">红</span><span class="label label-success">绿</span>，当前状态：全明</h5>
+      </div>
     </div>
   </div>
 </div>
@@ -50,8 +63,8 @@
 </body>
 <script type="text/javascript" src="js/lib/jquery-1.11.3.min.js"></script>
 <script type="text/javascript" src="js/lib/jquery-ui-1.11.4.min.js"></script>
+<script type="text/javascript" src="js/chess.js"></script>
 <script type="text/javascript" src="js/index.js"></script>
-
 <script type="text/javascript"></script>
 
 </html>
