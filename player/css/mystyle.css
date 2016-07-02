@@ -4,18 +4,50 @@ body {
 }
 
 #wrapper {
-    width: 100%;
-    min-width: 980px;
-    float: left
+    background: url(../images/board.png);
+    width: 680px;
+    height: 680px;
+    margin: 10px 0 10px 0;
+    padding: 0 0 0 0;
 }
 
 #board {
-    background: url(../images/board.png);
-    border: 1px outset gray;
-    float: left;
-    width: 680px;
-    height: 680px;
     position: relative;
-    margin: 0 0 0 0;
+    width: 681px;
+    height: 681px;
+    border: 1px outset gray;
+    margin-left: 3px;
+    margin-top: 0px;
+    padding: 0 0 0 0;
+}
+
+#board ul {
+    position: relative;
+    height: 40px;
+    width: 680px;
+    margin-left: 0px;
+    margin-top: 0px;
+    margin-right: 0px;
+    margin-bottom: 0px;
+    padding: 0 0 0 0;
+}
+
+#board ul li {
+    display: inline;
+    float: left;
+    position: relative;
+    height: 40px;
+    width: 40px;
+    border: 1px solid silver
+}
+
+img.chess {
+    position: relative;
+    height: 30px;
+    width: 30px;
+    margin-left: 5px;
+    margin-top: 5px;
+    margin-right: 0px;
+    margin-bottom: 0px;
     padding: 0 0 0 0;
 }
